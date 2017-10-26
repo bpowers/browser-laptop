@@ -32,8 +32,12 @@ const migrate = (state) => {
 }
 
 const setSpellCheckerSettings = () => {
-  setUserPref('spellcheck.dictionaries', getSetting(settings.SPELLCHECK_LANGUAGES))
-  setUserPref('browser.enable_spellchecking', getSetting(settings.SPELLCHECK_ENABLED))
+  const enabled = getSetting(settings.SPELLCHECK_ENABLED)
+  setUserPref('browser.enable_spellchecking', enabled)
+  if (enabled) {
+    setUserPref('spellcheck.dictionaries',
+                getSetting(settings.SPELLCHECK_LANGUAGES))
+  }
 }
 
 const spellCheckerReducer = (state, action, immutableAction) => {
@@ -43,7 +47,12 @@ const spellCheckerReducer = (state, action, immutableAction) => {
       state = migrate(state)
       break
     case appConstants.APP_CHANGE_SETTING:
-      setSpellCheckerSettings()
+      // TODO(darkdh): APP_SET_STATE is too early for startup setting so we use
+      // APP_NEW_WINDOW here
+      if ([settings.SPELLCHECK_ENABLED, settings.SPELLCHECK_LANGUAGES,
+        settings.APP_NEW_WINDOW].includes(action.get('key'))) {
+        setSpellCheckerSettings()
+      }
       break
     case appConstants.APP_SPELLING_SUGGESTED:
       if (typeof action.get('suggestion') === 'string') {
